@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <script src="js/campo-minado.js"></script>
+    </head>
+    <body>
+        <div id="exibir-execucao"></div>
+
+        <script>
+            var campoMinado = new CampoMinado();
+            
+            document.getElementById('exibir-execucao').innerHTML += '----------- Início do jogo -----------';
+            document.getElementById('exibir-execucao').innerHTML += '<pre>' + campoMinado.Tabuleiro() + '</pre>';
+            
+            // Realize sua codificação a partir deste ponto, boa sorte!
+
+            // Array para armazenar todas as bombas encontradas
+            bombas = [];
+
+            // Função que verifica o array de bombas para checar se um certo quadrado é uma bomba achada
+            function acharBomba(posicao) {
+                for (x = 0; x < bombas.length; x++) {
+                    if (bombas[x] == posicao) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Função que verifica em volta do quadrado recebido, verificando se há bombas ou espaços que não foram abertos
+            function verificarVolta(valor, posicao) {
+                // Se o valor for -, não adianta para a gente, pois verificamos se é uma bomba ou não baseado nos valores em volta
+                if (valor == '-') {
+                    return;
+                }
+
+                // Caso valor for 0 tudo em volta que pode ser aberto será aberto
+                if (valor == 0) {
+                    for (i = 0; i < 8; i++) {
+                        // Verifica se a posição não é uma que está no canto do tabuleiro
+                        // porque se for não precisa procurar por certos quadrados em volta, pois não existem
+                        // A divisao por 11 se da porque em cada linha tem 11 caracteres, sendo os dois ultimos em branco, não sendo utilizado no jogo, mas contando no array
+                        if (i < 3 && Math.floor(posicao / 11 ) != 0 && campoMinado.Tabuleiro()[posicao - 10 - i] == '-') {
+                            campoMinado.Abrir(posicao - 10 - i);
+                        } else if (i == 3 && Math.floor(posicao % 11) != 0 && campoMinado.Tabuleiro()[posicao - 1] == '-') {
+                            campoMinado.Abrir(posicao - 1);
+                        } else if (i == 4 && Math.floor(posicao % 11) != 8 && campoMinado.Tabuleiro()[posicao + 1] == '-') {
+                            campoMinado.Abrir(posicao + 1);
+                        } else if (i > 4 && Math.floor(posicao / 11) != 8 && campoMinado.Tabuleiro()[posicao + 5 + i] == '-') {
+                            campoMinado.Abrir(posicao + 5 + i);
+                        }
+                    }
+                    return;
+                }
+            
+                // Array com os possiveis espaços a serem abertos / que podem ser bombas
+                possiveis = [];
+
+                for (i = 0; i < 8; i++) {
+
+                    // verificar se em volta do quadrado que voce esta procurando tem bomba
+                    // A divisao por 11 se da porque em cada linha tem 11 caracteres, sendo os dois ultimos em branco, não sendo utilizado no jogo, mas contando no array
+                    if (i < 3 && Math.floor(posicao / 11) != 0 && campoMinado.Tabuleiro()[posicao - 10 - i] == '-') {
+                        // Se esse quadrado que está em volta for uma bomba, ele não precisa entrar no array de possiveis
+                        // Eu apenas diminuo o valor do quadrado atual, que significa o numero de bombas em volta
+                        if (acharBomba(posicao - 10 - i)) {
+                            valor--;
+                        } else {
+                            possiveis.push(posicao - 10 - i);
+                        }
+                    } else if (i == 3 && Math.floor(posicao % 11) != 0 && campoMinado.Tabuleiro()[posicao - 1] == '-') {
+                        if (acharBomba(posicao - 1)) {
+                            valor--;
+                        } else {
+                            possiveis.push(posicao - 1);
+                        }
+                    } else if (i == 4 && Math.floor(posicao % 11) != 8 && campoMinado.Tabuleiro()[posicao + 1] == '-') {
+                        if (acharBomba(posicao + 1)) {
+                            valor--;
+                        } else {
+                            possiveis.push(posicao + 1);
+                        }
+                    } else if (i > 4 && Math.floor(posicao / 11) != 8 && campoMinado.Tabuleiro()[posicao + 5 + i] == '-') {
+                        if (acharBomba(posicao + 5 + i)) {
+                            valor--;
+                        } else {
+                            possiveis.push(posicao + 5 + i);
+                        }
+                    }
+                }
+
+                // Se a quantidade de quadrados possiveis em volta for igual ao valor do quadrado atual, então obviamente esses quadrados em volta são bombas
+                if (possiveis.length == valor) {
+                    for (x = 0; x < possiveis.length; x++) {
+                        // Adicionando o quadrado que está em volta na lista de bombas;
+                        bombas.push(possiveis[x]);
+                    }
+                }
+                // Se o valor for igual a 0 porque algum quadrado em volta já era considerado bomba, então o resto dos quadrados possiveis já não são mais bomba
+                // Então podem ser abertos
+                if (valor == 0) {
+                    for (x = 0; x < possiveis.length; x++) {
+                        campoMinado.Abrir(Math.floor(possiveis[x] / 11 + 1), possiveis[x] % 11 + 1);
+                    }
+                }
+            }
+
+            // Loop enquanto o status do jogo for 0, que significa que o jogo esta em aberto
+            while (campoMinado.JogoStatus() == 0) {
+
+                // Passando por cada quadrado do tabuleiro
+                for (y = 0; y < campoMinado.Tabuleiro().length; y++) {
+                    verificarVolta(campoMinado.Tabuleiro()[y], y);
+                }
+                document.getElementById('exibir-execucao').innerHTML += '<pre>----------- Status: Jogo em aberto -----------</pre>';
+                document.getElementById('exibir-execucao').innerHTML += '<pre>' + campoMinado.Tabuleiro() + '</pre>';
+            }
+            // Verificando se o jogo acabou com vitória ou derrota
+            if (campoMinado.JogoStatus() == 1) {
+                document.getElementById('exibir-execucao').innerHTML += '<pre>----------- Status: Vitória -----------</pre>';
+            } else if (campoMinado.JogoStatus() == 2) {
+                document.getElementById('exibir-execucao').innerHTML += '<pre>----------- Status: Derrota -----------</pre>';
+            }
+            document.getElementById('exibir-execucao').innerHTML += '<pre>' + campoMinado.Tabuleiro() + '</pre>';
+        </script>
+    </body>
+</html>
